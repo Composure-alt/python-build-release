@@ -1,0 +1,42 @@
+name: Build Python App and Create Release
+
+on:
+  push:
+    branches:
+      - main  
+  tags:
+    - 'v*'  
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11' 
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Build the application with PyInstaller
+      run: |
+        pyinstaller --onefile --distpath dist --workpath build your_script.py  # Замените your_script.py на имя вашего скрипта
+
+    - name: Create release
+      id: create_release
+      run: |
+        VERSION_TAG=$(git describe --tags --abbrev=0)
+        gh release create $VERSION_TAG dist/* --title "Release $VERSION_TAG" --notes "Release notes for $VERSION_TAG"
+
+    - name: Upload release assets to GitHub
+      uses: actions/upload-artifact@v2
+      with:
+        name: python-app-binary
+        path: dist/*
